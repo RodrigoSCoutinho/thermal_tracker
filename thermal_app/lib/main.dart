@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/dashboard_screen.dart';
 
-void main() {
+Future<void> main() async {
+  // Load environment variables from the .env file
+  await dotenv.load(fileName: ".env");
+
+  // Check if the required variables are set
+  final channelId = dotenv.env['CHANNEL_ID'];
+  final apiKey = dotenv.env['API_KEY'];
+
+  if (channelId == null || apiKey == null) {
+    throw Exception(
+        'The environment variables CHANNEL_ID and API_KEY are not set in the .env file.');
+  }
+
   runApp(const MyApp());
 }
 
