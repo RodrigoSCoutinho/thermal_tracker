@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../services/api_service.dart';
 import '../widgets/temperature_card.dart';
 
@@ -10,10 +11,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final ApiService apiService = ApiService(
-    baseUrl: 'https://api.thingspeak.com/channels/YOUR_CHANNEL_ID',
-    apiKey: 'YOUR_API_KEY',
-  );
+  late final ApiService apiService;
 
   String latestTemperature = 'Loading...';
   Color cardColor = Colors.blue;
@@ -23,6 +21,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    apiService = ApiService(
+      baseUrl:
+          'https://api.thingspeak.com/channels/${dotenv.env['CHANNEL_ID']}',
+      apiKey: dotenv.env['API_KEY']!,
+    );
     fetchTemperature();
     fetchTemperatureHistory();
   }

@@ -3,19 +3,26 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/dashboard_screen.dart';
 
 Future<void> main() async {
-  // Load environment variables from the .env file
-  await dotenv.load(fileName: ".env");
+  try {
+    // Load environment variables from the .env file
+    await dotenv.load(fileName: ".env");
 
-  // Check if the required variables are set
-  final channelId = dotenv.env['CHANNEL_ID'];
-  final apiKey = dotenv.env['API_KEY'];
+    // Check if the required variables are set
+    final channelId = dotenv.env['CHANNEL_ID'];
+    final apiKey = dotenv.env['API_KEY'];
 
-  if (channelId == null || apiKey == null) {
+    if (channelId == null || apiKey == null) {
+      throw Exception(
+          'The environment variables CHANNEL_ID and API_KEY are not set in the .env file.');
+    }
+
+    runApp(const MyApp());
+  } catch (e) {
+    // Print the error and exit the app
+    print('Error loading .env file: $e');
     throw Exception(
-        'The environment variables CHANNEL_ID and API_KEY are not set in the .env file.');
+        'Failed to load .env file. Make sure it exists and is properly configured.');
   }
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
