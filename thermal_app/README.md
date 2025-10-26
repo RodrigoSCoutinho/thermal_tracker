@@ -61,8 +61,11 @@ Thermal Tracker é um aplicativo Flutter desenvolvido para monitorar temperatura
 
 Adicione aqui uma captura de tela do aplicativo em execução:
 
-![Captura de Tela](./images/screen.png)
-![Captura de Tela 2](./images/screen2.png)
+![Captura de Tela](./images/login.png)
+![Captura de Tela 2](./images/dashboard.png)
+![Captura de Tela 3](./images/alert.png)
+![Captura de Tela 4](./images/full_history.png)
+![Captura de Tela 5](./images/config.png)
 
 ## Licença
 
