@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiService {
   final String baseUrl;
@@ -9,22 +9,71 @@ class ApiService {
   ApiService({required this.baseUrl, required this.apiKey});
 
   Future<Map<String, dynamic>> fetchLatestData() async {
-    final response = await http
-        .get(Uri.parse('$baseUrl/feeds.json?api_key=$apiKey&results=1'));
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to fetch data');
+    final url = '$baseUrl/feeds.json?api_key=$apiKey&results=1';
+    debugPrint('ApiService: Making GET request to: $url');
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      debugPrint('ApiService: Response status code: ${response.statusCode}');
+      debugPrint('ApiService: Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        debugPrint('ApiService: Parsed response data: $data');
+        return data;
+      } else {
+        throw Exception(
+            'ApiService: Failed to fetch data. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('ApiService: Error during HTTP request: $e');
+      throw Exception('ApiService: Failed to fetch data');
     }
   }
 
   Future<List<dynamic>> fetchHistoricalData() async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/feeds.json?api_key=$apiKey'));
-    if (response.statusCode == 200) {
-      return json.decode(response.body)['feeds'];
-    } else {
-      throw Exception('Failed to fetch historical data');
+    final url = '$baseUrl/feeds.json?api_key=$apiKey';
+    debugPrint('ApiService: Making GET request to: $url');
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      debugPrint('ApiService: Response status code: ${response.statusCode}');
+      debugPrint('ApiService: Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final feeds = json.decode(response.body)['feeds'];
+        debugPrint('ApiService: Parsed historical data: $feeds');
+        return feeds;
+      } else {
+        throw Exception(
+            'ApiService: Failed to fetch historical data. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('ApiService: Error during HTTP request: $e');
+      throw Exception('ApiService: Failed to fetch historical data');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchDataWithResults(int results) async {
+    final url = '$baseUrl/feeds.json?api_key=$apiKey&results=$results';
+    debugPrint('ApiService: Making GET request to: $url');
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      debugPrint('ApiService: Response status code: ${response.statusCode}');
+      debugPrint('ApiService: Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        debugPrint('ApiService: Parsed response data: $data');
+        return data;
+      } else {
+        throw Exception(
+            'ApiService: Failed to fetch data. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('ApiService: Error during HTTP request: $e');
+      throw Exception('ApiService: Failed to fetch data');
     }
   }
 }

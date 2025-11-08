@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../services/api_service.dart';
-import '../widgets/temperature_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -13,159 +12,210 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late final ApiService apiService;
 
-  String latestTemperature = 'Loading...';
-  Color cardColor = Colors.blue;
-  List<double> temperatureHistory = [];
+  Map<String, dynamic>? channelData;
+  List<dynamic>? feedsData;
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
     super.initState();
+    debugPrint('DashboardScreen initState called');
+    final channelId = dotenv.env['CHANNEL_ID'];
+    final apiKey = dotenv.env['API_KEY'];
+
+    debugPrint('CHANNEL_ID: $channelId');
+    debugPrint('API_KEY: $apiKey');
+
+    if (channelId == null || apiKey == null) {
+      setState(() {
+        errorMessage = 'Missing CHANNEL_ID or API_KEY in .env file';
+        isLoading = false;
+      });
+      debugPrint('Error: $errorMessage');
+      return;
+    }
+
     apiService = ApiService(
-      baseUrl:
-          'https://api.thingspeak.com/channels/${dotenv.env['CHANNEL_ID']}',
-      apiKey: dotenv.env['API_KEY']!,
+      baseUrl: 'https://api.thingspeak.com/channels/$channelId',
+      apiKey: apiKey,
     );
-    fetchTemperature();
-    fetchTemperatureHistory();
+    debugPrint('ApiService initialized with baseUrl: ${apiService.baseUrl}');
+    fetchData();
   }
 
-  Future<void> fetchTemperature() async {
+  /**
+   * Fetch data from ThingSpeak API and update state accordingly.
+   */
+  Future<void> fetchData() async {
+    debugPrint('fetchData called');
     try {
-      final data = await apiService.fetchLatestData();
-      if (data['feeds'] != null && data['feeds'].isNotEmpty) {
-        setState(() {
-          latestTemperature = '${data['feeds'][0]['field1']} °C';
-          cardColor = double.parse(data['feeds'][0]['field1']) > 30
-              ? Colors.red
-              : Colors.green;
-        });
-      } else {
-        setDummyData();
-      }
+      final data =
+          await apiService.fetchDataWithResults(30); // Fetch 30 results
+      debugPrint('Data fetched: $data');
+      setState(() {
+        channelData = data['channel'];
+        feedsData = data['feeds'];
+        isLoading = false;
+      });
     } catch (e) {
-      setDummyData();
+      debugPrint('Error fetching data: $e');
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
     }
   }
 
-  Future<void> fetchTemperatureHistory() async {
-    try {
-      final data = await apiService.fetchHistoricalData();
-      if (data.isNotEmpty) {
-        setState(() {
-          temperatureHistory = data
-              .map<double>((entry) => double.tryParse(entry['field1']) ?? 0.0)
-              .toList();
-          isLoading = false;
-        });
-      } else {
-        setDummyHistory();
-      }
-    } catch (e) {
-      setDummyHistory();
+  /**
+   * Extract valid temperature readings from feeds data.
+   */
+  List<double> getValidTemperatures() {
+    if (feedsData == null || feedsData!.isEmpty) {
+      debugPrint('No feeds data available.');
+      return [];
     }
+    return feedsData!
+        .map((feed) => double.tryParse((feed['field1'] ?? '').toString()))
+        .where((temp) => temp != null)
+        .cast<double>()
+        .toList();
   }
 
-  void setDummyData() {
-    setState(() {
-      latestTemperature = '25.0 °C (Dummy)';
-      cardColor = Colors.green;
-    });
+  /**
+   * Calculate average temperature from a list of temperatures.
+   */
+  double calculateAverageTemperature(List<double> temperatures) {
+    if (temperatures.isEmpty) {
+      debugPrint('No valid temperatures available for average calculation.');
+      return 0.0;
+    }
+    return temperatures.reduce((a, b) => a + b) / temperatures.length;
   }
 
-  void setDummyHistory() {
-    setState(() {
-      temperatureHistory = List.generate(10, (index) => 20 + index.toDouble());
-      isLoading = false;
-    });
+  /**
+   * Calculate median temperature from a list of temperatures.
+   */
+  double calculateMedianTemperature(List<double> temperatures) {
+    if (temperatures.isEmpty) {
+      debugPrint('No valid temperatures available for median calculation.');
+      return 0.0;
+    }
+    final sorted = List<double>.from(temperatures)..sort();
+    final middle = sorted.length ~/ 2;
+    return sorted.length.isOdd
+        ? sorted[middle]
+        : (sorted[middle - 1] + sorted[middle]) / 2;
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('build method called');
+    debugPrint(
+        'isLoading: $isLoading, errorMessage: $errorMessage, channelData: $channelData, feedsData: $feedsData');
+
+    final validTemperatures = getValidTemperatures();
+    final averageTemperature = calculateAverageTemperature(validTemperatures);
+    final medianTemperature = calculateMedianTemperature(validTemperatures);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Temperature Dashboard'),
+        title: const Text('ThingSpeak Data'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Latest Temperature Card
-            TemperatureCard(
-              title: 'Latest Temperature',
-              value: latestTemperature,
-              color: cardColor,
-            ),
-            const SizedBox(height: 16),
-            // Temperature History Chart
-            Expanded(
-              child: Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Temperature History',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+              ? Center(child: Text('Error: $errorMessage'))
+              : channelData != null && feedsData != null
+                  ? Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Channel Information
+                            Text(
+                              'Channel Information',
+                              style: const TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text('Name: ${channelData!['name']}'),
+                            Text('Created At: ${channelData!['created_at']}'),
+                            Text('Updated At: ${channelData!['updated_at']}'),
+                            Text('Latitude: ${channelData!['latitude']}'),
+                            Text('Longitude: ${channelData!['longitude']}'),
+                            Text(
+                                'Last Entry ID: ${channelData!['last_entry_id']}'),
+                            const SizedBox(height: 16),
+
+                            // Average Temperature
+                            Text(
+                              'Average Temperature: ${averageTemperature.toStringAsFixed(2)} °C',
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Median Temperature
+                            Text(
+                              'Median Temperature: ${medianTemperature.toStringAsFixed(2)} °C',
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Temperature Graph
+                            const Text(
+                              'Temperature Over Time',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            validTemperatures.isNotEmpty
+                                ? SizedBox(
+                                    height: 200,
+                                    child: CustomPaint(
+                                      painter: TemperatureGraphPainter(
+                                          temperatures: validTemperatures),
+                                      child: Container(),
+                                    ),
+                                  )
+                                : const Text(
+                                    'No valid temperature data available for the graph.',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : CustomPaint(
-                                painter: TemperatureChartPainter(
-                                  data: temperatureHistory,
-                                ),
-                                child: Container(),
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Save Temperature Section
-            ElevatedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Temperature saved!')),
-                );
-              },
-              icon: const Icon(Icons.save),
-              label: const Text('Save Current Temperature'),
-            ),
-          ],
-        ),
-      ),
+                    )
+                  : const Center(child: Text('No data available')),
     );
   }
 }
 
-class TemperatureChartPainter extends CustomPainter {
-  final List<double> data;
+class TemperatureGraphPainter extends CustomPainter {
+  final List<double> temperatures;
 
-  TemperatureChartPainter({required this.data});
+  TemperatureGraphPainter({required this.temperatures});
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (temperatures.isEmpty) return;
+
     final paint = Paint()
       ..color = Colors.blue
-      ..strokeWidth = 2
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
     final path = Path();
-    final double spacing = size.width / (data.length - 1);
-    for (int i = 0; i < data.length; i++) {
-      final x = i * spacing;
+    final stepX = size.width / (temperatures.length - 1);
+    final maxTemp = temperatures.reduce((a, b) => a > b ? a : b);
+    final minTemp = temperatures.reduce((a, b) => a < b ? a : b);
+    final tempRange = maxTemp - minTemp;
+
+    for (int i = 0; i < temperatures.length; i++) {
+      final x = i * stepX;
       final y =
-          size.height - (data[i] / 50 * size.height); // Normalize to height
+          size.height - ((temperatures[i] - minTemp) / tempRange * size.height);
       if (i == 0) {
         path.moveTo(x, y);
       } else {
@@ -174,16 +224,6 @@ class TemperatureChartPainter extends CustomPainter {
     }
 
     canvas.drawPath(path, paint);
-
-    // Draw points
-    final pointPaint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
-    for (int i = 0; i < data.length; i++) {
-      final x = i * spacing;
-      final y = size.height - (data[i] / 50 * size.height);
-      canvas.drawCircle(Offset(x, y), 4, pointPaint);
-    }
   }
 
   @override
