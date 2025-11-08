@@ -61,11 +61,32 @@ Thermal Tracker é um aplicativo Flutter desenvolvido para monitorar temperatura
 
 Adicione aqui uma captura de tela do aplicativo em execução:
 
-![Captura de Tela](./images/login.png)
-![Captura de Tela 2](./images/dashboard.png)
-![Captura de Tela 3](./images/alert.png)
-![Captura de Tela 4](./images/full_history.png)
-![Captura de Tela 5](./images/config.png)
+<div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin:16px 0;">
+   <figure style="margin:0;">
+      <img src="./images/login.png" alt="Captura de Tela - Login" style="height:380px;max-width:100%;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin:4px;"/>
+      <figcaption style="text-align:center;font-size:0.9rem;margin-top:8px;">Tela de Login</figcaption>
+   </figure>
+
+   <figure style="margin:0;">
+      <img src="./images/dashboard2.png" alt="Captura de Tela - Dashboard" style="height:360px;max-width:100%;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin:4px;"/>
+      <figcaption style="text-align:center;font-size:0.9rem;margin-top:8px;">Dashboard</figcaption>
+   </figure>
+
+   <figure style="margin:0;">
+      <img src="./images/alert.png" alt="Captura de Tela - Alertas" style="height:320px;max-width:100%;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin:4px;"/>
+      <figcaption style="text-align:center;font-size:0.9rem;margin-top:8px;">Alerta Visual</figcaption>
+   </figure>
+
+   <figure style="margin:0;">
+      <img src="./images/history2.png" alt="Captura de Tela - Histórico" style="height:420px;max-width:100%;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin:4px;"/>
+      <figcaption style="text-align:center;font-size:0.9rem;margin-top:8px;">Histórico Completo</figcaption>
+   </figure>
+
+   <figure style="margin:0;">
+      <img src="./images/config.png" alt="Captura de Tela - Configurações" style="height:340px;max-width:100%;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin:4px;"/>
+      <figcaption style="text-align:center;font-size:0.9rem;margin-top:8px;">Configurações</figcaption>
+   </figure>
+</div>
 
 ## Licença
 
